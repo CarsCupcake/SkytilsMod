@@ -18,6 +18,8 @@
 
 package gg.skytils.skytilsmod
 
+import com.google.common.base.Predicate
+import com.mojang.authlib.properties.Property
 import gg.essential.universal.UChat
 import gg.essential.universal.UKeyboard
 import gg.skytils.skytilsmod.commands.impl.*
@@ -72,15 +74,22 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import net.minecraft.client.Minecraft
+import net.minecraft.client.entity.EntityOtherPlayerMP
 import net.minecraft.client.gui.GuiButton
 import net.minecraft.client.gui.GuiGameOver
 import net.minecraft.client.gui.GuiIngameMenu
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.client.settings.KeyBinding
+import net.minecraft.entity.EntityLiving
+import net.minecraft.entity.EntityLivingBase
+import net.minecraft.entity.item.EntityArmorStand
 import net.minecraft.inventory.ContainerChest
 import net.minecraft.launchwrapper.Launch
+import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.network.play.client.C01PacketChatMessage
 import net.minecraft.network.play.server.*
+import net.minecraft.util.AxisAlignedBB
+import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.client.event.GuiOpenEvent
 import net.minecraftforge.client.event.GuiScreenEvent
@@ -99,9 +108,12 @@ import net.minecraftforge.fml.common.network.FMLNetworkEvent
 import skytils.hylin.HylinAPI
 import sun.misc.Unsafe
 import java.io.File
+import java.io.StringWriter
+import java.io.Writer
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
+import java.util.function.Consumer
 import kotlin.coroutines.CoroutineContext
 
 @Mod(
@@ -254,7 +266,6 @@ class Skytils {
             SoundQueue,
             TickTask,
             UpdateChecker,
-
             AlignmentTaskSolver,
             AntiFool,
             ArmorColor,
@@ -424,6 +435,69 @@ class Skytils {
             if (UKeyboard.isKeyDown(UKeyboard.KEY_CAPITAL)) {
                 UChat.chat("Copied scoreboard data to clipboard")
                 GuiScreen.setClipboardString(ScoreboardUtil.sidebarLines.toString())
+            }
+            if (UKeyboard.isKeyDown(UKeyboard.KEY_LSHIFT)) {
+                val vec = mc.thePlayer.lookVec.times(5.0)
+                val base = mc.thePlayer.lookVec
+                val m1 = base.rotateYaw(90f).times(0.5)
+                val m2 = base.rotateYaw(-90f).times(0.5).add(vec)
+                val x = mc.thePlayer.posX;
+                val y = mc.thePlayer.posY;
+                val z = mc.thePlayer.posZ;
+                val bb = AxisAlignedBB(x + m1.x, y + m1.y, z + m1.z, x + m2.x, y + 2 + m2.y, z + m2.z);
+                var entitys = mc.theWorld.getEntitiesWithinAABB(
+                    EntityLivingBase::class.java,
+                    bb,
+                    object : Predicate<EntityLivingBase?> {
+                        override fun apply(input: EntityLivingBase?): Boolean {
+                            return input?.entityId != mc.thePlayer.entityId && (input?.name?.contains("❤") == false)
+                        }
+                    })
+                if (!entitys.isEmpty()) {
+                    var e = entitys[0]
+                    var dis = 5000.0
+                    for (en in entitys) {
+                        val d = en.position.distanceSq(mc.thePlayer.position)
+                        if (d < dis) {
+                            dis = d
+                            e = en
+                        }
+                    }
+                    val comp = NBTTagCompound()
+                    e.writeToNBT(comp)
+                    GuiScreen.setClipboardString(comp.toString())
+                    UChat.chat("Copied entitys nbt from ${e.name} (${e.javaClass.simpleName})")
+                    if (e is EntityOtherPlayerMP) {
+                        val player: EntityOtherPlayerMP = e
+                        val propertys = player.gameProfile.properties.get("textures")
+                        propertys.stream().filter(object : java.util.function.Predicate<Property?> {
+                            override fun test(t: Property?): Boolean {
+                                return t?.name == "textures"
+                            }
+                        }).forEach(object : Consumer<Property?> {
+                            override fun accept(t: Property?) {
+
+                                UChat.chat( "${t?.value}")
+                                UChat.chat( "${t?.signature}")
+                            }
+                        })
+                    }
+                    /*Thread( Runnable() {
+                        fun run() {
+                            val file = File(File(modDir, "entitydata"), "${Ae.uniqueID}.txt")
+                            if(file.exists())
+                                file.delete()
+                            else file.mkdirs()
+                            file.createNewFile()
+                            printDevMessage("Start writing:")
+                            printDevMessage(e.serializeNBT().toString())
+                            file.writeText(e.serializeNBT().toString())
+
+                        }
+                }).start()*/
+
+
+                } else UChat.chat("§cNo entity found!")
             }
             val container = mc.thePlayer?.openContainer
             if (UKeyboard.isKeyDown(UKeyboard.KEY_LMETA) && container is ContainerChest) {
