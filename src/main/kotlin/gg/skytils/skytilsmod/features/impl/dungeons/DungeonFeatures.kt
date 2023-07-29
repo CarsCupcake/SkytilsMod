@@ -23,6 +23,7 @@ import gg.essential.universal.UMatrixStack
 import gg.skytils.skytilsmod.Skytils
 import gg.skytils.skytilsmod.Skytils.Companion.mc
 import gg.skytils.skytilsmod.Skytils.Companion.prefix
+import gg.skytils.skytilsmod.core.Config
 import gg.skytils.skytilsmod.core.GuiManager
 import gg.skytils.skytilsmod.core.structure.GuiElement
 import gg.skytils.skytilsmod.events.impl.*
@@ -41,6 +42,8 @@ import gg.skytils.skytilsmod.utils.graphics.colors.CommonColors
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.minecraft.block.BlockAir
+import net.minecraft.block.BlockSign
 import net.minecraft.block.BlockStainedGlass
 import net.minecraft.block.material.Material
 import net.minecraft.client.entity.EntityOtherPlayerMP
@@ -51,6 +54,7 @@ import net.minecraft.entity.boss.BossStatus
 import net.minecraft.entity.item.EntityArmorStand
 import net.minecraft.entity.item.EntityItem
 import net.minecraft.entity.monster.EntityBlaze
+import net.minecraft.entity.monster.EntityEnderman
 import net.minecraft.entity.monster.EntitySkeleton
 import net.minecraft.entity.passive.EntityBat
 import net.minecraft.event.ClickEvent
@@ -59,19 +63,24 @@ import net.minecraft.init.Blocks
 import net.minecraft.init.Items
 import net.minecraft.inventory.ContainerChest
 import net.minecraft.item.EnumDyeColor
+import net.minecraft.item.ItemArmor
 import net.minecraft.item.ItemSkull
+import net.minecraft.item.ItemStack
 import net.minecraft.network.play.server.*
 import net.minecraft.potion.Potion
 import net.minecraft.util.AxisAlignedBB
 import net.minecraft.util.BlockPos
 import net.minecraft.util.ChatComponentText
 import net.minecraft.util.EnumChatFormatting
+import net.minecraft.util.Vec3
 import net.minecraft.world.World
 import net.minecraftforge.client.event.ClientChatReceivedEvent
 import net.minecraftforge.client.event.GuiOpenEvent
 import net.minecraftforge.client.event.RenderLivingEvent
 import net.minecraftforge.client.event.RenderWorldLastEvent
+import net.minecraftforge.event.entity.EntityJoinWorldEvent
 import net.minecraftforge.event.entity.living.LivingDeathEvent
+import net.minecraftforge.event.entity.living.LivingSpawnEvent
 import net.minecraftforge.event.entity.player.ItemTooltipEvent
 import net.minecraftforge.event.world.WorldEvent
 import net.minecraftforge.fml.common.eventhandler.EventPriority
@@ -121,6 +130,7 @@ object DungeonFeatures {
         "Fels",
         "Withermancer"
     )
+    private var roomBox: AxisAlignedBB? = null
 
     init {
         LividGuiElement()
@@ -175,10 +185,35 @@ object DungeonFeatures {
         }
     }
 
+    private fun makeBox(pos: BlockPos){
+        var pos1 = pos
+        var pos2 = pos
+        while (mc.theWorld.getBlockState(pos1.north()).block != Blocks.air) pos1 = pos1.north()
+        while (mc.theWorld.getBlockState(pos1.east()).block != Blocks.air) pos1 = pos1.east()
+        while (mc.theWorld.getBlockState(pos2.south()).block != Blocks.air) pos2 = pos2.south()
+        while (mc.theWorld.getBlockState(pos2.west()).block != Blocks.air) pos2 = pos2.west()
+        while (mc.theWorld.getBlockState(pos2.up()).block != Blocks.air) pos2 = pos2.up()
+        roomBox = AxisAlignedBB(pos1, pos2)
+        UChat.chat("New room box: " + pos1.toString() + " " + pos2.toString())
+    }
+
     @SubscribeEvent
     fun onTick(event: ClientTickEvent) {
         if (event.phase != TickEvent.Phase.START || mc.thePlayer == null || mc.theWorld == null) return
         if (Utils.inDungeons) {
+            /*if (Config.boxStarredMobs){
+                if (roomBox == null || roomBox?.isPosInside(mc.thePlayer.position) == false) {
+                    UChat.chat("${roomBox?.isPosInside(mc.thePlayer.position)}")
+                    var zeroPos = BlockPos(mc.thePlayer.position.x, 0, mc.thePlayer.position.z)
+                    while (zeroPos.y < 255 && mc.theWorld.getBlockState(zeroPos).block == Blocks.air) {
+                        zeroPos = BlockPos(zeroPos.x, zeroPos.y + 1, zeroPos.z)
+                        if (mc.theWorld.getBlockState(zeroPos).block == Blocks.bedrock) {
+                            makeBox(zeroPos)
+                            break
+                        }
+                    }
+                }
+            }*/
             if (dungeonFloor == null) {
                 for (line in ScoreboardUtil.sidebarLines) {
                     if (line.contains("The Catacombs (")) {
@@ -387,6 +422,8 @@ object DungeonFeatures {
         if (!Utils.inSkyblock) return
         val unformatted = event.message.unformattedText.stripControlCodes()
         if (Utils.inDungeons) {
+
+
             if (Skytils.config.autoCopyFailToClipboard) {
                 if (deathOrPuzzleFail.containsMatchIn(unformatted) || (unformatted.startsWith("[CROWD]") && thornMissMessages.any {
                         unformatted.contains(
@@ -479,6 +516,33 @@ object DungeonFeatures {
                 GlStateManager.enableDepth()
                 GlStateManager.enableCull()
             }
+            if (!hasBossSpawned && Skytils.config.boxFels && event.entity is EntityEnderman && event.entity.isInvisible){
+                val x =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosX,
+                        event.entity.posX,
+                        RenderUtil.getPartialTicks()
+                    )
+                val y =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosY,
+                        event.entity.posY,
+                        RenderUtil.getPartialTicks()
+                    )
+                val z =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosZ,
+                        event.entity.posZ,
+                        RenderUtil.getPartialTicks()
+                    )
+                val color = Color(144, 18, 176, 255)
+                RenderUtil.drawOutlinedBoundingBox(
+                    AxisAlignedBB(x - 0.5, y + 3, z - 0.5, x + 0.5, y, z + 0.5),
+                    color,
+                    3f,
+                    RenderUtil.getPartialTicks()
+                )
+            }
             if (event.entity is EntityArmorStand && event.entity.hasCustomName()) {
                 if (Skytils.config.hideWitherMinerNametags) {
                     val name = event.entity.customNameTag.stripControlCodes()
@@ -566,6 +630,10 @@ object DungeonFeatures {
                                     RenderUtil.getPartialTicks()
                                 )
                             val color = Color(0, 255, 255, 255)
+                            if (Skytils.config.starredBoxTroughWalls){
+                                GlStateManager.disableDepth()
+                                GlStateManager.disableCull()
+                            }
                             if ("Spider" in name) {
                                 RenderUtil.drawOutlinedBoundingBox(
                                     AxisAlignedBB(
@@ -595,6 +663,37 @@ object DungeonFeatures {
                                     RenderUtil.getPartialTicks()
                                 )
                             }
+                            if(Skytils.config.starredBoxTroughWalls){
+                                GlStateManager.enableDepth();
+                                GlStateManager.enableCull();
+                            }
+                        }
+                    }else if(!hasBossSpawned && Skytils.config.boxInvisibleLivid && event.entity is EntityOtherPlayerMP && (event.entity as EntityOtherPlayerMP).currentEquippedItem != null){
+                        if((event.entity as EntityOtherPlayerMP).currentEquippedItem.item == Items.iron_sword) {
+                            val x =
+                                RenderUtil.interpolate(
+                                    event.entity.lastTickPosX,
+                                    event.entity.posX,
+                                    RenderUtil.getPartialTicks()
+                                )
+                            val y =
+                                RenderUtil.interpolate(
+                                    event.entity.lastTickPosY,
+                                    event.entity.posY,
+                                    RenderUtil.getPartialTicks()
+                                )
+                            val z =
+                                RenderUtil.interpolate(
+                                    event.entity.lastTickPosZ,
+                                    event.entity.posZ,
+                                    RenderUtil.getPartialTicks()
+                                )
+                            val color = Color(118, 77, 201, 255)
+                            RenderUtil.drawFilledBoundingBox(matrixStack,
+                                AxisAlignedBB(x - 0.5, y + 2, z - 0.5, x + 0.5, y, z + 0.5),
+                                color,
+                                3f
+                            )
                         }
                     }
                 }
@@ -750,6 +849,20 @@ object DungeonFeatures {
         blazes = 0
         hasClearedText = false
         terracottaSpawns.clear()
+    }
+
+    @SubscribeEvent
+    fun onSpawn(event: ReceiveEvent){
+        if(event.packet is S1CPacketEntityMetadata){
+            val e = mc.theWorld.getEntityByID(event.packet.entityId)
+            if (e !is EntityArmorStand) return
+            if (e.name.contains("Wither Key")) {
+                GuiManager.createTitle("§8§lWither Key", 40)
+            }
+            if (e.name.contains("Blood Key")) {
+                GuiManager.createTitle("§c§lBlood Key", 40)
+            }
+        }
     }
 
     class PortalTimer : GuiElement("Blood Room Portal Timer", x = 0.05f, y = 0.4f) {

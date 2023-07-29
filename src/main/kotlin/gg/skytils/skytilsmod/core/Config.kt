@@ -388,6 +388,19 @@ object Config : Vigilant(
         category = "Dungeons", subcategory = "Quality of Life"
     )
     var boxStarredMobs = false
+    @Property(
+        type = PropertyType.SWITCH, name = "Box Starred Mobs Visible Through walls",
+        description = "Makes the boxes visible through walls.",
+        category = "Dungeons", subcategory = "Quality of Life"
+    )
+    var starredBoxTroughWalls = false
+    @Property(
+        type = PropertyType.SWITCH, name = "Box Invisible Shadow Assassin",
+        description = "Makes a boxe around an invisible shadow assassin",
+        category = "Dungeons", subcategory = "Quality of Life"
+    )
+    var boxInvisibleLivid = false
+
 
     @Property(
         type = PropertyType.SWITCH, name = "Box Skeleton Masters",
@@ -409,6 +422,20 @@ object Config : Vigilant(
         category = "Dungeons", subcategory = "Quality of Life"
     )
     var boxSpiritBow = false
+
+    @Property(
+        type = PropertyType.SWITCH, name = "Box Invisible Fels",
+        description = "Draws a box around the Fel.",
+        category = "Dungeons", subcategory = "Quality of Life"
+    )
+    var boxFels = false
+
+    @Property(
+        type = PropertyType.SWITCH, name = "Ghost Block",
+        description = "Makes a Ghost Block on Key Press",
+        category = "Dungeons", subcategory = "Quality of Life"
+    )
+    var instaGhost = false
 
     @Property(
         type = PropertyType.NUMBER, name = "Dungeon Chest Reroll Confirmation",
@@ -2972,6 +2999,7 @@ object Config : Vigilant(
         addDependency("includeModifiersInSellValue", "containerSellValue")
 
         addDependency("assumeWitherImpact", "witherShieldCooldown")
+        addDependency("starredBoxTroughWalls", "boxStarredMobs")
 
         registerListener("protectItemBINThreshold") { _: String ->
             TickTask(1) {

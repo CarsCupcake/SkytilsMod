@@ -20,6 +20,7 @@ package gg.skytils.skytilsmod
 
 import com.google.common.base.Predicate
 import com.mojang.authlib.properties.Property
+import gg.essential.elementa.state.state
 import gg.essential.universal.UChat
 import gg.essential.universal.UKeyboard
 import gg.skytils.skytilsmod.commands.impl.*
@@ -73,6 +74,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
+import net.minecraft.block.state.IBlockState
 import net.minecraft.client.Minecraft
 import net.minecraft.client.entity.EntityOtherPlayerMP
 import net.minecraft.client.gui.GuiButton
@@ -83,18 +85,21 @@ import net.minecraft.client.settings.KeyBinding
 import net.minecraft.entity.EntityLiving
 import net.minecraft.entity.EntityLivingBase
 import net.minecraft.entity.item.EntityArmorStand
+import net.minecraft.init.Blocks
 import net.minecraft.inventory.ContainerChest
 import net.minecraft.launchwrapper.Launch
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.network.play.client.C01PacketChatMessage
 import net.minecraft.network.play.server.*
 import net.minecraft.util.AxisAlignedBB
+import net.minecraft.util.BlockPos
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.client.event.GuiOpenEvent
 import net.minecraftforge.client.event.GuiScreenEvent
 import net.minecraftforge.client.event.RenderGameOverlayEvent
 import net.minecraftforge.common.MinecraftForge
+import net.minecraftforge.fml.client.registry.ClientRegistry
 import net.minecraftforge.fml.common.Loader
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.common.event.FMLInitializationEvent
@@ -103,8 +108,10 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent
 import net.minecraftforge.fml.common.eventhandler.EventPriority
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import net.minecraftforge.fml.common.gameevent.InputEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent
 import net.minecraftforge.fml.common.network.FMLNetworkEvent
+import org.lwjgl.input.Keyboard
 import skytils.hylin.HylinAPI
 import sun.misc.Unsafe
 import java.io.File
@@ -193,6 +200,8 @@ class Skytils {
                 isAccessible = true
             }.get(null) as Unsafe
         }
+        val KEY_CATEGORY = "key.category.skytils"
+        val GHOST_BLOCK = KeyBinding("key.ghostblocks", Keyboard.KEY_V, KEY_CATEGORY)
 
         val json = Json {
             prettyPrint = true
@@ -248,13 +257,33 @@ class Skytils {
         guiManager = GuiManager
         jarFile = event.sourceFile
         mc.framebuffer.enableStencil()
+        ClientRegistry.registerKeyBinding(GHOST_BLOCK)
+    }
+
+    @SubscribeEvent
+    fun onKeyPress(event: InputEvent.KeyInputEvent) {
+        if (GHOST_BLOCK.isPressed) {
+            if (config.instaGhost) {
+                for (i in 0..4) {
+                    val pos = BlockPos(
+                        mc.thePlayer.position.x + (mc.thePlayer.lookVec.x * i),
+                        mc.thePlayer.position.y + mc.thePlayer.eyeHeight + (mc.thePlayer.lookVec.y * i),
+                        mc.thePlayer.position.z + (mc.thePlayer.lookVec.z * i)
+                    )
+                    val state = mc.theWorld.getBlockState(pos)
+                    if (state.block != Blocks.air) {
+                        mc.theWorld.setBlockToAir(pos)
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Mod.EventHandler
     fun init(event: FMLInitializationEvent) {
         config.init()
         UpdateChecker.downloadDeleteTask()
-
         arrayOf(
             this,
             ChatListener,
@@ -407,6 +436,8 @@ class Skytils {
         }
     }
 
+    var i = 0;
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     fun onTick(event: TickEvent.ClientTickEvent) {
         if (event.phase != TickEvent.Phase.START) return
@@ -477,8 +508,8 @@ class Skytils {
                         }).forEach(object : Consumer<Property?> {
                             override fun accept(t: Property?) {
 
-                                UChat.chat( "${t?.value}")
-                                UChat.chat( "${t?.signature}")
+                                UChat.chat("${t?.value}")
+                                UChat.chat("${t?.signature}")
                             }
                         })
                     }

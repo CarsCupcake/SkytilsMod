@@ -1093,7 +1093,7 @@ object SlayerFeatures : CoroutineScope {
      *
      * Subtype of [Slayer]
      */
-    abstract class ThrowingSlayer<T : EntityLiving>(entity: T, name: String, nameStart: String) : Slayer<T>(
+    abstract class ThrowingSlayer<T : EntityLivingBase>(entity: T, name: String, nameStart: String) : Slayer<T>(
         entity, name, nameStart,
     ) {
         var thrownLocation: BlockPos? = null
@@ -1396,7 +1396,7 @@ object SlayerFeatures : CoroutineScope {
     }
 
     class BloodfiendSlayer(entity: EntityOtherPlayerMP) :
-        Slayer<EntityOtherPlayerMP>(entity, "Riftstalker Bloodfiend", "§c☠ §4Bloodfiend") {
+        ThrowingSlayer<EntityOtherPlayerMP>(entity, "Riftstalker Bloodfiend", "§c☠ §4Bloodfiend") {
 
         var lastHadTwinclaws = false
         var isStakeable = false
@@ -1412,12 +1412,18 @@ object SlayerFeatures : CoroutineScope {
         }
 
         fun timerEntityChanged(newName: String) {
-            if (!lastHadTwinclaws && newName.contains("TWINCLAWS")) {
+            lastHadTwinclaws = if (!lastHadTwinclaws && newName.contains("TWINCLAWS")) {
                 if (Skytils.config.twinclawAlert && GuiManager.title != stakeTitle) createTitle("§6§lTWINCLAWS!", 10)
-                lastHadTwinclaws = true
+                true
             } else {
-                lastHadTwinclaws = false
+                false
             }
         }
+        override fun entityJoinWorld(event: EntityJoinWorldEvent){
+             if(event.entity.name.contains("BOOM") && event.entity.getDistanceSq(entity.position) < 8)
+                 createTitle("§aPILLAR", 10)
+        }
+
+        override fun blockChange(event: BlockChangeEvent) {}
     }
 }
