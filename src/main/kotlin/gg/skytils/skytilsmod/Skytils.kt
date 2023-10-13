@@ -93,6 +93,7 @@ import net.minecraft.network.play.client.C01PacketChatMessage
 import net.minecraft.network.play.server.*
 import net.minecraft.util.AxisAlignedBB
 import net.minecraft.util.BlockPos
+import net.minecraft.util.MovingObjectPosition
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.client.event.GuiOpenEvent
@@ -264,17 +265,11 @@ class Skytils {
     fun onKeyPress(event: InputEvent.KeyInputEvent) {
         if (GHOST_BLOCK.isPressed) {
             if (config.instaGhost) {
-                for (i in 0..4) {
-                    val pos = BlockPos(
-                        mc.thePlayer.position.x + (mc.thePlayer.lookVec.x * i),
-                        mc.thePlayer.position.y + mc.thePlayer.eyeHeight + (mc.thePlayer.lookVec.y * i),
-                        mc.thePlayer.position.z + (mc.thePlayer.lookVec.z * i)
-                    )
-                    val state = mc.theWorld.getBlockState(pos)
-                    if (state.block != Blocks.air) {
-                        mc.theWorld.setBlockToAir(pos)
-                        break;
-                    }
+                if(mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) return
+                val pos = mc.objectMouseOver.blockPos
+                val state = mc.theWorld.getBlockState(pos)
+                if (state.block != Blocks.air) {
+                    mc.theWorld.setBlockToAir(pos)
                 }
             }
         }
@@ -390,6 +385,15 @@ class Skytils {
         ModChecker.checkModdedForge()
 
         ScreenRenderer.init()
+    }
+
+    @SubscribeEvent
+    fun onPacket(event: PacketEvent.ReceiveEvent) {
+        if(!DevTools.getToggle("particledebuger")) return
+        if(event.packet is S2APacketParticles) {
+            val par = event.packet
+            UChat.chat("Recieved Particle ${par.particleType} ${par.count} times")
+        }
     }
 
     @Mod.EventHandler

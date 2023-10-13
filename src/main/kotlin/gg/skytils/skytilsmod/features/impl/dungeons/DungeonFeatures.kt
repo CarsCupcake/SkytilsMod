@@ -54,6 +54,7 @@ import net.minecraft.entity.boss.BossStatus
 import net.minecraft.entity.item.EntityArmorStand
 import net.minecraft.entity.item.EntityItem
 import net.minecraft.entity.monster.EntityBlaze
+import net.minecraft.entity.monster.EntityCreeper
 import net.minecraft.entity.monster.EntityEnderman
 import net.minecraft.entity.monster.EntitySkeleton
 import net.minecraft.entity.passive.EntityBat
@@ -679,10 +680,11 @@ object DungeonFeatures {
                                     RenderUtil.getPartialTicks()
                                 )
                             val color = Color(118, 77, 201, 255)
-                            RenderUtil.drawFilledBoundingBox(matrixStack,
+                            RenderUtil.drawOutlinedBoundingBox(
                                 AxisAlignedBB(x - 0.5, y + 2, z - 0.5, x + 0.5, y, z + 0.5),
                                 color,
-                                3f
+                                3f,
+                                RenderUtil.getPartialTicks()
                             )
                         }
                     }
@@ -701,6 +703,34 @@ object DungeonFeatures {
                 RenderUtil.drawOutlinedBoundingBox(
                     aabb,
                     Color(255, 107, 11, 255),
+                    3f,
+                    RenderUtil.getPartialTicks()
+                )
+            }
+        } else {
+            if(Skytils.config.highlightSneakyCreepers && event.entity.isInvisible && event.entity is EntityCreeper && SBInfo.mode == "mining_2") {
+                val x =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosX,
+                        event.entity.posX,
+                        RenderUtil.getPartialTicks()
+                    )
+                val y =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosY,
+                        event.entity.posY,
+                        RenderUtil.getPartialTicks()
+                    )
+                val z =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosZ,
+                        event.entity.posZ,
+                        RenderUtil.getPartialTicks()
+                    )
+                val color = Color(0, 255, 0, 255)
+                RenderUtil.drawOutlinedBoundingBox(
+                    AxisAlignedBB(x - 0.5, y + 2, z - 0.5, x + 0.5, y, z + 0.5),
+                    color,
                     3f,
                     RenderUtil.getPartialTicks()
                 )

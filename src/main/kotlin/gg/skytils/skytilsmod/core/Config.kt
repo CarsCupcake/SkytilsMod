@@ -118,6 +118,13 @@ object Config : Vigilant(
     var reopenOptionsMenu = true
 
     @Property(
+        type = PropertyType.SWITCH, name = "Highlight Sneaky Creepers",
+        description = "Highlights sneaky creepers",
+        category = "General", subcategory = "Other"
+    )
+    var highlightSneakyCreepers = true
+
+    @Property(
         type = PropertyType.SWITCH, name = "Override other reparty commands",
         description = "Uses Skytils' reparty command instead of other mods'. \n§cRequires restart to disable",
         category = "General", subcategory = "Reparty"
