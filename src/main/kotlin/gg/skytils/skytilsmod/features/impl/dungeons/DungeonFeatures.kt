@@ -54,6 +54,7 @@ import net.minecraft.entity.boss.BossStatus
 import net.minecraft.entity.item.EntityArmorStand
 import net.minecraft.entity.item.EntityItem
 import net.minecraft.entity.monster.EntityBlaze
+import net.minecraft.entity.monster.EntityCreeper
 import net.minecraft.entity.monster.EntityEnderman
 import net.minecraft.entity.monster.EntitySkeleton
 import net.minecraft.entity.passive.EntityBat
@@ -134,7 +135,6 @@ object DungeonFeatures {
 
     init {
         LividGuiElement()
-        PortalTimer()
         SpiritBearSpawnTimer()
     }
 
@@ -149,7 +149,7 @@ object DungeonFeatures {
         } else if (isInTerracottaPhase && Skytils.config.terracottaRespawnTimer && dungeonFloor?.endsWith('6') == true) {
             if (event.old.block == Blocks.air && event.update.block == Blocks.flower_pot) {
                 // TODO: verify M6 time
-                terracottaSpawns[event.pos] = System.currentTimeMillis() + if (dungeonFloor == "F6") 15000 else 13000
+                terracottaSpawns[event.pos] = System.currentTimeMillis() + if (dungeonFloor == "F6") 15000 else 12000
             }
         }
     }
@@ -254,8 +254,6 @@ object DungeonFeatures {
                 GuiManager.createTitle("Spirit Pet", 20)
                 alertedSpiritPet = true
             }
-
-            secondsToPortal = (mc.thePlayer.maxInPortalTime / 20f) * (1 - mc.thePlayer.timeInPortal)
 
             if (Skytils.config.findCorrectLivid && !foundLivid) {
                 if (equalsOneOf(dungeonFloor, "F5", "M5")) {
@@ -422,8 +420,6 @@ object DungeonFeatures {
         if (!Utils.inSkyblock) return
         val unformatted = event.message.unformattedText.stripControlCodes()
         if (Utils.inDungeons) {
-
-
             if (Skytils.config.autoCopyFailToClipboard) {
                 if (deathOrPuzzleFail.containsMatchIn(unformatted) || (unformatted.startsWith("[CROWD]") && thornMissMessages.any {
                         unformatted.contains(
@@ -619,7 +615,7 @@ object DungeonFeatures {
                         val name = event.entity.name
                         if (name.startsWith("§6✯ ") && name.endsWith("§c❤")) {
                             val (x, y, z) = RenderUtil.fixRenderPos(event.x, event.y, event.z)
-                            val color = Color(0, 255, 255, 255)
+                            val color = Skytils.config.boxStarredMobsColor
                             if (Skytils.config.starredBoxTroughWalls){
                                 GlStateManager.disableDepth()
                                 GlStateManager.disableCull()
@@ -679,10 +675,11 @@ object DungeonFeatures {
                                     RenderUtil.getPartialTicks()
                                 )
                             val color = Color(118, 77, 201, 255)
-                            RenderUtil.drawFilledBoundingBox(matrixStack,
+                            RenderUtil.drawOutlinedBoundingBox(
                                 AxisAlignedBB(x - 0.5, y + 2, z - 0.5, x + 0.5, y, z + 0.5),
                                 color,
-                                3f
+                                3f,
+                                RenderUtil.getPartialTicks()
                             )
                         }
                     }
@@ -701,6 +698,34 @@ object DungeonFeatures {
                 RenderUtil.drawOutlinedBoundingBox(
                     aabb,
                     Color(255, 107, 11, 255),
+                    3f,
+                    RenderUtil.getPartialTicks()
+                )
+            }
+        } else {
+            if(Skytils.config.highlightSneakyCreepers && event.entity.isInvisible && event.entity is EntityCreeper && SBInfo.mode == "mining_2") {
+                val x =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosX,
+                        event.entity.posX,
+                        RenderUtil.getPartialTicks()
+                    )
+                val y =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosY,
+                        event.entity.posY,
+                        RenderUtil.getPartialTicks()
+                    )
+                val z =
+                    RenderUtil.interpolate(
+                        event.entity.lastTickPosZ,
+                        event.entity.posZ,
+                        RenderUtil.getPartialTicks()
+                    )
+                val color = Color(0, 255, 0, 255)
+                RenderUtil.drawOutlinedBoundingBox(
+                    AxisAlignedBB(x - 0.5, y + 2, z - 0.5, x + 0.5, y, z + 0.5),
+                    color,
                     3f,
                     RenderUtil.getPartialTicks()
                 )
@@ -784,8 +809,8 @@ object DungeonFeatures {
                     }
                 }
 
-                chestName == "Start Dungeon?" -> {
-                    if (!startWithoutFullParty && Skytils.config.noChildLeftBehind && event.slot?.stack?.displayName == "§aStart Dungeon?") {
+                chestName == "Ready Up" -> {
+                    if (!startWithoutFullParty && Skytils.config.noChildLeftBehind) {
                         val teamCount =
                             (DungeonListener.partyCountPattern.find(TabListUtils.tabEntries[0].second)?.groupValues?.get(
                                 1
@@ -853,51 +878,6 @@ object DungeonFeatures {
             if (e.name.contains("Blood Key")) {
                 GuiManager.createTitle("§c§lBlood Key", 40)
             }
-        }
-    }
-
-    class PortalTimer : GuiElement("Blood Room Portal Timer", x = 0.05f, y = 0.4f) {
-        override fun render() {
-            if (!toggled || !Utils.inDungeons || DungeonTimer.bloodClearTime == -1L || DungeonTimer.bossEntryTime != -1L || mc.thePlayer?.isInsideOfMaterial(
-                    Material.portal
-                ) == false
-            ) return
-            val leftAlign = scaleX < sr.scaledWidth / 2f
-            val alignment = if (leftAlign) TextAlignment.LEFT_RIGHT else TextAlignment.RIGHT_LEFT
-            ScreenRenderer.fontRenderer.drawString(
-                "§a${secondsToPortal.roundToPrecision(2)}s",
-                if (leftAlign) 0f else width.toFloat(),
-                0f,
-                CommonColors.RED,
-                alignment,
-                SmartFontRenderer.TextShadow.NORMAL
-            )
-        }
-
-        override fun demoRender() {
-            val leftAlign = scaleX < sr.scaledWidth / 2f
-            val alignment = if (leftAlign) TextAlignment.LEFT_RIGHT else TextAlignment.RIGHT_LEFT
-            ScreenRenderer.fontRenderer.drawString(
-                "§aPortal: 3.99s",
-                if (leftAlign) 0f else 0f + width,
-                0f,
-                CommonColors.RED,
-                alignment,
-                SmartFontRenderer.TextShadow.NORMAL
-            )
-        }
-
-        override val height: Int
-            get() = ScreenRenderer.fontRenderer.FONT_HEIGHT
-
-        override val width: Int
-            get() = ScreenRenderer.fontRenderer.getStringWidth("Portal: 3.99s")
-
-        override val toggled: Boolean
-            get() = Skytils.config.bloodPortalTimer
-
-        init {
-            Skytils.guiManager.registerElement(this)
         }
     }
 

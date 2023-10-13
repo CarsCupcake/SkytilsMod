@@ -58,6 +58,7 @@ import gg.skytils.skytilsmod.listeners.ChatListener
 import gg.skytils.skytilsmod.listeners.DungeonListener
 import gg.skytils.skytilsmod.localapi.LocalAPI
 import gg.skytils.skytilsmod.mixins.extensions.ExtensionEntityLivingBase
+import gg.skytils.skytilsmod.mixins.hooks.util.MouseHelperHook
 import gg.skytils.skytilsmod.mixins.transformers.accessors.AccessorCommandHandler
 import gg.skytils.skytilsmod.mixins.transformers.accessors.AccessorGuiStreamUnavailable
 import gg.skytils.skytilsmod.mixins.transformers.accessors.AccessorSettingsGui
@@ -93,6 +94,7 @@ import net.minecraft.network.play.client.C01PacketChatMessage
 import net.minecraft.network.play.server.*
 import net.minecraft.util.AxisAlignedBB
 import net.minecraft.util.BlockPos
+import net.minecraft.util.MovingObjectPosition
 import net.minecraft.util.Vec3
 import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.client.event.GuiOpenEvent
@@ -264,17 +266,11 @@ class Skytils {
     fun onKeyPress(event: InputEvent.KeyInputEvent) {
         if (GHOST_BLOCK.isPressed) {
             if (config.instaGhost) {
-                for (i in 0..4) {
-                    val pos = BlockPos(
-                        mc.thePlayer.position.x + (mc.thePlayer.lookVec.x * i),
-                        mc.thePlayer.position.y + mc.thePlayer.eyeHeight + (mc.thePlayer.lookVec.y * i),
-                        mc.thePlayer.position.z + (mc.thePlayer.lookVec.z * i)
-                    )
-                    val state = mc.theWorld.getBlockState(pos)
-                    if (state.block != Blocks.air) {
-                        mc.theWorld.setBlockToAir(pos)
-                        break;
-                    }
+                if(mc.objectMouseOver.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) return
+                val pos = mc.objectMouseOver.blockPos
+                val state = mc.theWorld.getBlockState(pos)
+                if (state.block != Blocks.air) {
+                    mc.theWorld.setBlockToAir(pos)
                 }
             }
         }
@@ -331,7 +327,6 @@ class Skytils {
             IcePathSolver,
             ItemFeatures,
             KeyShortcuts,
-            KuudraFeatures,
             LockOrb,
             MasterMode7Features,
             MayorDiana,
@@ -373,7 +368,8 @@ class Skytils {
             TriviaSolver,
             VisitorHelper,
             WaterBoardSolver,
-            Waypoints
+            Waypoints,
+            MouseHelperHook
         ).forEach(MinecraftForge.EVENT_BUS::register)
     }
 
@@ -390,6 +386,15 @@ class Skytils {
         ModChecker.checkModdedForge()
 
         ScreenRenderer.init()
+    }
+
+    @SubscribeEvent
+    fun onPacket(event: PacketEvent.ReceiveEvent) {
+        if(!DevTools.getToggle("particledebuger")) return
+        if(event.packet is S2APacketParticles) {
+            val par = event.packet
+            UChat.chat("Recieved Particle ${par.particleType} ${par.count} times")
+        }
     }
 
     @Mod.EventHandler

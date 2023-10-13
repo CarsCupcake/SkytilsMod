@@ -144,6 +144,15 @@ class OptionsGui :
         }.onMouseClick {
             Desktop.getDesktop().browse(URI("https://editor.skytils.gg/"))
         }
+        SimpleButton("Super Secret Settings Editor").childOf(window).constrain {
+            x = CenterConstraint()
+            y = SiblingConstraint() + 2.pixels()
+            width = 200.pixels()
+            height = 20.pixels()
+        }.onMouseClick {
+            Skytils.displayScreen = SuperSecretGui()
+            mc.theWorld.playAuxSFXAtEntity(mc.thePlayer, 1003, mc.thePlayer.position, 0)
+        }
         SimpleButton("Discord").childOf(window).constrain {
             x = basicXConstraint { window.getWidth() - this.getWidth() - 3 }
             y = basicYConstraint { window.getHeight() - this.getHeight() - 3 }

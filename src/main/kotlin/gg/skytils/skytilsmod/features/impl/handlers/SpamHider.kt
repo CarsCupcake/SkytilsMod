@@ -183,7 +183,7 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
 
     private enum class Regexs(var pattern: Regex) {
         BLESSINGBUFF(Regex("(?<buff1>\\+[\\d,.%& \\+x]+) (?<symbol1>\\S{1,2})")),
-        BLESSINGGRANT(Regex("Grant.{1,2} you (.*) and (.*)\\.")),
+        BLESSINGGRANT(Regex("(?:Also g|G)rant.{1,2} you (.*) (?:and|&) (.*)\\.")),
         BLESSINGNAME(Regex("Blessing of (?<blessing>\\w+)")),
         BUILDINGTOOLS(Regex("(§eZapped §a\\d+ §eblocks! §a§lUNDO§r)|(§r§eUnzapped §r§c\\d+ §r§eblocks away!§r)|(§r§cYou may not Grand Architect that many blocks! \\(\\d+/\\d+\\)§r)|(§r§cYou have \\(\\d+/\\d+\\) of what you're attempting to place!§r)|(§eYou built §a\\d+ §eblocks! §a§lUNDO§r)|(§r§eUndid latest Grand Architect use of §r§c\\d+ §r§eblocks!§r)")),
         MANAUSED(Regex("(§b-\\d+ Mana \\(§6.+§b\\))")),
@@ -200,7 +200,7 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
     fun onChatPacket(event: ReceiveEvent) {
         val packet = event.packet
         if (Utils.inSkyblock && packet is S0BPacketAnimation && packet.animationType == 0) {
-            val entity = mc.theWorld.getEntityByID(packet.entityID) ?: return
+            val entity = mc.theWorld?.getEntityByID(packet.entityID) ?: return
             if (entity !is EntityOtherPlayerMP) return
             if (entity.heldItem?.item != deadBush || entity.getDistanceSqToEntity(mc.thePlayer) > 4 * 4) return
             lastSpooked = System.currentTimeMillis()
@@ -338,11 +338,12 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
                     }
                 }
 
-                Utils.inDungeons && unformatted.contains("Grant") -> {
+                Utils.inDungeons && unformatted.contains("rant") -> {
                     Regexs.BLESSINGGRANT.pattern.find(unformatted)?.let { match ->
                         when (Skytils.config.blessingHider) {
                             1 -> cancelChatPacket(event, false)
                             2 -> {
+                                // TODO: account for new format
                                 val buffs = match.groupValues.mapNotNull { blessingGroup ->
                                     Regexs.BLESSINGBUFF.pattern.matchEntire(blessingGroup)
                                 }.map { blessingBuffMatch ->
@@ -714,7 +715,7 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
         return false
     }
 
-    class SpamMessage(var message: String, var time: Long, var height: Double)
+    data class SpamMessage(var message: String, var time: Long, var height: Double)
     class SpamGuiElement : GuiElement("Spam Gui", scale = 1.0f, x = 0.65f, y = 0.925f) {
         /**
          * Based off of Soopyboo32's SoopyApis module
@@ -730,10 +731,11 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
             lastTimeRender = now
             var i = 0
             val reversed = spamMessages.asReversed()
+            val leftAlign = scaleX < sr.scaledWidth / 2f
             while (i in spamMessages.indices) {
                 val message = reversed[i]
-                val messageWidth = Minecraft.getMinecraft().fontRendererObj.getStringWidth(
-                    message.message.stripControlCodes()
+                val messageWidth = ScreenRenderer.fontRenderer.getStringWidth(
+                    message?.message?.stripControlCodes()
                 )
                 if (scaleY > sr.scaledHeight / 2f) {
                     message.height = message.height + (i * 10 - message.height) * (animDiv * 5)
@@ -753,7 +755,7 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
                 animOnOff = sin(animOnOff)
                 animOnOff *= -1.0
                 animOnOff += 1.0
-                val x = animOnOff * (messageWidth + 30) * if (scaleX < sr.scaledWidth / 2f) -1 else 1
+                val x = animOnOff * (messageWidth + 30) * if (leftAlign) -1 else 1
                 val y = -1 * message.height
                 val shadow: TextShadow = when (Skytils.config.spamShadow) {
                     1 -> TextShadow.NONE
@@ -761,10 +763,10 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
                     else -> TextShadow.NORMAL
                 }
                 val alignment =
-                    if (scaleX < sr.scaledWidth / 2f) TextAlignment.LEFT_RIGHT else TextAlignment.RIGHT_LEFT
+                    if (leftAlign) TextAlignment.LEFT_RIGHT else TextAlignment.RIGHT_LEFT
                 ScreenRenderer.fontRenderer.drawString(
                     message.message,
-                    (if (scaleX < sr.scaledWidth / 2f) x else x + width).toFloat(),
+                    (if (leftAlign) x else x + width).toFloat(),
                     y.toFloat(),
                     CommonColors.WHITE,
                     alignment,
@@ -823,8 +825,8 @@ object SpamHider : PersistentSave(File(Skytils.modDir, "spamhider.json")) {
         if (addToSpam) newMessage(event.packet.chatComponent.formattedText)
     }
 
-    private fun newMessage(message: String) {
-        spamMessages.add(SpamMessage(message, 0, 0.0))
+    private fun newMessage(message: String?) {
+        spamMessages.add(SpamMessage(message ?: return, 0, 0.0))
     }
 
     init {

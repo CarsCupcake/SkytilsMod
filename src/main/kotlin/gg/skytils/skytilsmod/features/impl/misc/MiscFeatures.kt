@@ -29,6 +29,7 @@ import gg.skytils.skytilsmod.core.structure.GuiElement
 import gg.skytils.skytilsmod.events.impl.*
 import gg.skytils.skytilsmod.events.impl.GuiContainerEvent.SlotClickEvent
 import gg.skytils.skytilsmod.events.impl.PacketEvent.ReceiveEvent
+import gg.skytils.skytilsmod.mixins.transformers.accessors.AccessorEntityArmorstand
 import gg.skytils.skytilsmod.mixins.transformers.accessors.AccessorWorldInfo
 import gg.skytils.skytilsmod.utils.*
 import gg.skytils.skytilsmod.utils.ItemUtil.getExtraAttributes
@@ -96,7 +97,7 @@ object MiscFeatures {
         "ewogICJ0aW1lc3RhbXAiIDogMTU5ODg0NzA4MjYxMywKICAicHJvZmlsZUlkIiA6ICI0MWQzYWJjMmQ3NDk0MDBjOTA5MGQ1NDM0ZDAzODMxYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNZWdha2xvb24iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzQwZDZlMzYyYmM3ZWVlNGY5MTFkYmQwNDQ2MzA3ZTc0NThkMTA1MGQwOWFlZTUzOGViY2IwMjczY2Y3NTc0MiIKICAgIH0KICB9Cn0=",
     )
     private val hubSpawnPoint = BlockPos(-2, 70, -69)
-    private val bestiaryTitleRegex = Regex("\"(?:\\\\(\\\\d+\\\\/\\\\d+\\\\) )?(?:Bestiary ➜ (?!Fishing)|(?:Fishing ➜ ))|Search Results\"")
+    private val bestiaryTitleRegex = Regex("(?:\\(\\d+/\\d+\\) )?(?:Bestiary ➜ (?!Fishing)|Fishing ➜ )|Search Results")
 
     init {
         GolemSpawnTimerElement()
@@ -256,6 +257,7 @@ object MiscFeatures {
             }
         } else if (Skytils.deobfEnvironment && DevTools.getToggle("invis")) {
             event.entity.isInvisible = false
+            (event.entity as? AccessorEntityArmorstand)?.invokeSetShowArms(true)
         }
     }
 
@@ -444,9 +446,9 @@ object MiscFeatures {
         if (!Utils.inSkyblock || event.phase != TickEvent.Phase.START || mc.thePlayer == null || mc.theWorld == null) return
 
         if (Skytils.config.playersInRangeDisplay) {
-            inRangePlayerCount = mc.theWorld.playerEntities.filterIsInstance<EntityOtherPlayerMP>().count {
-                it.uniqueID.version() == 4 && it.getDistanceSqToEntity(mc.thePlayer) <= 30 * 30
-            }
+            inRangePlayerCount = (mc.theWorld.playerEntities.filterIsInstance<EntityOtherPlayerMP>().count {
+                (it.uniqueID.version() == 4 || it.uniqueID.version() == 1) && it.getDistanceSqToEntity(mc.thePlayer) <= 30 * 30 // Nicked players have uuid v1, Watchdog has uuid v4
+            } - 1).coerceAtLeast(0) // The -1 is to remove watchdog from the list
         }
         if (Skytils.config.summoningEyeDisplay && SBInfo.mode == SkyblockIsland.TheEnd.mode) {
             placedEyes = PlacedSummoningEyeDisplay.SUMMONING_EYE_FRAMES.count {

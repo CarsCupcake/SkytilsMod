@@ -118,6 +118,13 @@ object Config : Vigilant(
     var reopenOptionsMenu = true
 
     @Property(
+        type = PropertyType.SWITCH, name = "Highlight Sneaky Creepers",
+        description = "Highlights sneaky creepers",
+        category = "General", subcategory = "Other"
+    )
+    var highlightSneakyCreepers = true
+
+    @Property(
         type = PropertyType.SWITCH, name = "Override other reparty commands",
         description = "Uses Skytils' reparty command instead of other mods'. \n§cRequires restart to disable",
         category = "General", subcategory = "Reparty"
@@ -167,13 +174,6 @@ object Config : Vigilant(
         options = ["None", "Pre-Release", "Release"]
     )
     var updateChannel = 2
-
-    @Property(
-        type = PropertyType.SWITCH, name = "Blood Room Portal Timer",
-        description = "Displays time to portal on your HUD.",
-        category = "Dungeons", subcategory = "HUD"
-    )
-    var bloodPortalTimer = false
 
     @Property(
         type = PropertyType.SWITCH, name = "Dungeon Crypts Counter",
@@ -401,6 +401,13 @@ object Config : Vigilant(
     )
     var boxInvisibleLivid = false
 
+
+    @Property(
+        type = PropertyType.COLOR, name = "Box Starred Mobs Color",
+        description = "Color of the bounding box for Starred Mobs.",
+        category = "Dungeons", subcategory = "Quality of Life"
+    )
+    var boxStarredMobsColor = Color(0, 255, 255, 255)
 
     @Property(
         type = PropertyType.SWITCH, name = "Box Skeleton Masters",
@@ -1165,13 +1172,6 @@ object Config : Vigilant(
         category = "Farming", subcategory = "Quality of Life"
     )
     var talbotsTheodoliteHelper = false
-
-    @Property(
-        type = PropertyType.TEXT, name = "Kuudra Auto-Reparty Player",
-        description = "Automatically performs a reparty upon joining a Kuudra bossfight. Leave this blank to disable.",
-        category = "Kuudra", subcategory = "Quality of Life"
-    )
-    var kuudraAutoRepartyPlayer = ""
 
     @Property(
         type = PropertyType.SWITCH, name = "Dark Mode Mist",
@@ -2183,13 +2183,6 @@ object Config : Vigilant(
         options = ["Normal", "Hidden", "Separate GUI"]
     )
     var hideAutopetMessages = 0
-
-    @Property(
-        type = PropertyType.SWITCH, name = "Hide Pet Nametags",
-        description = "Hides the nametags above pets.",
-        category = "Pets", subcategory = "Quality of Life"
-    )
-    var hidePetNametags = false
 
     @Property(
         type = PropertyType.SWITCH, name = "Highlight Active Pet",
