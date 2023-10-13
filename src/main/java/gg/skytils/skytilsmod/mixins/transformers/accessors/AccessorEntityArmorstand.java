@@ -16,18 +16,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package gg.skytils.skytilsmod.mixins.transformers.util;
+package gg.skytils.skytilsmod.mixins.transformers.accessors;
 
-import com.llamalad7.mixinextras.injector.WrapWithCondition;
-import gg.skytils.skytilsmod.mixins.hooks.util.MouseHelperHook;
-import net.minecraft.util.MouseHelper;
+import net.minecraft.entity.item.EntityArmorStand;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(MouseHelper.class)
-public class MixinMouseHelper {
-    @WrapWithCondition(method = "ungrabMouseCursor", at = @At(value = "INVOKE", target = "Lorg/lwjgl/input/Mouse;setCursorPosition(II)V", remap = false))
-    private boolean shouldSetCursorPos(int newX, int newY) {
-        return MouseHelperHook.INSTANCE.shouldResetMouseToCenter();
-    }
+@Mixin(EntityArmorStand.class)
+public interface AccessorEntityArmorstand {
+    @Invoker
+    void invokeSetShowArms(boolean bl);
 }
