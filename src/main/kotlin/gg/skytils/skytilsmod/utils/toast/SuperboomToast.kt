@@ -15,22 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package gg.skytils.skytilsmod.utils.toasts
 
-/**
- * Taken from Skyblockcatia under MIT License
- * Modified
- * https://github.com/SteveKunG/SkyBlockcatia/blob/1.8.9/LICENSE.md
- *
- * @author SteveKunG
- */
-interface IToast<T> {
-    fun draw(toastGui: GuiToast, delta: Long): Visibility
-    enum class Visibility {
-        SHOW, HIDE
-    }
+package gg.skytils.skytilsmod.utils.toast
 
-    fun getType(): Any {
-        return Object()
+import gg.skytils.skytilsmod.gui.profile.components.ItemComponent
+import net.minecraft.enchantment.Enchantment
+import net.minecraft.init.Blocks
+import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+
+class SuperboomToast :
+        Toast(
+            "§9Superboom TNT",
+            ItemComponent(superboom)
+        )
+{
+    companion object {
+        private val superboom = ItemStack(Item.getItemFromBlock(Blocks.tnt))
+            .apply { addEnchantment(Enchantment.unbreaking, 1) }
     }
 }
