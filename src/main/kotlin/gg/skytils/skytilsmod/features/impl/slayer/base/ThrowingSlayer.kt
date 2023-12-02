@@ -15,23 +15,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-plugins {
-    kotlin("jvm") version "1.8.22"
-    id("gg.essential.loom") version "1.3.12"
-    id("gg.essential.defaults") version "0.3.0"
-}
 
-dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
-    annotationProcessor("com.github.LlamaLad7:MixinExtras:0.1.1")
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
-    compileOnly("org.spongepowered:mixin:0.8.5")
-}
+package gg.skytils.skytilsmod.features.impl.slayer.base
 
-java.toolchain {
-    languageVersion = JavaLanguageVersion.of(8)
-}
+import gg.skytils.skytilsmod.events.impl.BlockChangeEvent
+import net.minecraft.entity.EntityLiving
+import net.minecraft.entity.item.EntityArmorStand
+import net.minecraft.util.BlockPos
+import net.minecraftforge.event.entity.EntityJoinWorldEvent
 
-loom.mixin {
-    defaultRefmapName = "mixins.skytils-events.refmap.json"
+/**
+ * Represents a slayer which can throw a thing
+ *
+ * Subtype of [Slayer]
+ */
+abstract class ThrowingSlayer<T : EntityLiving>(entity: T, name: String, nameStart: String) : Slayer<T>(
+    entity, name, nameStart,
+) {
+    var thrownLocation: BlockPos? = null
+    var thrownEntity: EntityArmorStand? = null
+
+    open fun entityJoinWorld(event: EntityJoinWorldEvent) {}
+
+    abstract fun blockChange(event: BlockChangeEvent)
 }

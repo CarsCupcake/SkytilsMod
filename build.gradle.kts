@@ -31,7 +31,7 @@ plugins {
     signing
 }
 
-version = "1.7.8"
+version = "1.8.0-pre3"
 group = "gg.skytils"
 
 repositories {
@@ -216,6 +216,10 @@ tasks {
             "fabric.mod.json"
         )
         mergeServiceFiles()
+    }
+    withType<AbstractArchiveTask> {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
     }
     withType<JavaCompile> {
         options.encoding = "UTF-8"
