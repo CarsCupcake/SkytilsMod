@@ -23,6 +23,7 @@ import com.mojang.authlib.properties.Property
 import gg.essential.elementa.state.state
 import gg.essential.universal.UChat
 import gg.essential.universal.UKeyboard
+import gg.skytils.event.Events
 import gg.skytils.skytilsmod.commands.impl.*
 import gg.skytils.skytilsmod.commands.stats.impl.CataCommand
 import gg.skytils.skytilsmod.commands.stats.impl.SlayerCommand
@@ -549,7 +550,7 @@ class Skytils {
     }
 
     init {
-        TickTask(20, repeats = true) {
+        tickTimer(20, repeats = true) {
             if (mc.thePlayer != null) {
                 if (deobfEnvironment) {
                     if (DevTools.toggles.getOrDefault("forcehypixel", false)) Utils.isOnHypixel = true
