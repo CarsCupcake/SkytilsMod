@@ -24,7 +24,7 @@ import gg.skytils.skytilsmod.core.GuiManager
 import gg.skytils.skytilsmod.core.SoundQueue
 import gg.skytils.skytilsmod.core.tickTimer
 import gg.skytils.skytilsmod.events.impl.BlockChangeEvent
-import gg.skytils.skytilsmod.features.impl.slayer.SlayerFeatures
+import gg.skytils.skytilsmod.features.impl.misc.SlayerFeatures
 import gg.skytils.skytilsmod.features.impl.slayer.base.ThrowingSlayer
 import gg.skytils.skytilsmod.utils.ItemUtil
 import gg.skytils.skytilsmod.utils.Utils

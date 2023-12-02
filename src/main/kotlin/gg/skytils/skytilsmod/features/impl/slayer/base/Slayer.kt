@@ -20,7 +20,7 @@ package gg.skytils.skytilsmod.features.impl.slayer.base
 
 import gg.skytils.skytilsmod.core.tickTask
 import gg.skytils.skytilsmod.features.impl.handlers.MayorInfo
-import gg.skytils.skytilsmod.features.impl.slayer.SlayerFeatures
+import gg.skytils.skytilsmod.features.impl.misc.SlayerFeatures
 import gg.skytils.skytilsmod.features.impl.slayer.impl.DemonlordSlayer
 import gg.skytils.skytilsmod.utils.baseMaxHealth
 import gg.skytils.skytilsmod.utils.printDevMessage

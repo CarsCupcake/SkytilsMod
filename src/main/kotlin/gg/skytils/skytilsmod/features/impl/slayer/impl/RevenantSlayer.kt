@@ -22,7 +22,7 @@ import gg.skytils.skytilsmod.Skytils
 import gg.skytils.skytilsmod.core.Config
 import gg.skytils.skytilsmod.core.SoundQueue
 import gg.skytils.skytilsmod.core.tickTimer
-import gg.skytils.skytilsmod.features.impl.slayer.SlayerFeatures
+import gg.skytils.skytilsmod.features.impl.misc.SlayerFeatures
 import gg.skytils.skytilsmod.features.impl.slayer.base.Slayer
 import gg.skytils.skytilsmod.utils.Utils
 import net.minecraft.block.BlockHalfStoneSlab
