@@ -67,7 +67,7 @@ object WaterBoardSolver {
                     prevInWaterRoom = inWaterRoom
                     inWaterRoom = false
                     if (Utils.getBlocksWithinRangeAtSameY(player.position, 13, 54).any {
-                            world.getBlockState(it).block === Blocks.sticky_piston
+                            world.getBlockState(it).block == Blocks.sticky_piston
                         }) {
                         if (chestPos == null || roomFacing == null) {
                             val playerX = mc.thePlayer.posX.toInt()
@@ -127,18 +127,15 @@ object WaterBoardSolver {
                                             Blocks.diamond_block -> foundDiamond = true
                                         }
                                     }
-                                    if (foundGold && foundClay) {
-                                        variant = 0
-                                    } else if (foundEmerald && foundQuartz) {
-                                        variant = 1
-                                    } else if (foundQuartz && foundDiamond) {
-                                        variant = 2
-                                    } else if (foundGold && foundQuartz) {
-                                        variant = 3
+                                    variant = when {
+                                        SuperSecretSettings.bennettArthur -> Random.nextInt(4)
+                                        foundGold && foundClay -> 0
+                                        foundEmerald && foundQuartz -> 1
+                                        foundQuartz && foundDiamond -> 2
+                                        foundGold && foundQuartz -> 3
+                                        else -> -1
                                     }
-                                    if (SuperSecretSettings.bennettArthur) {
-                                        variant = Random.nextInt(4)
-                                    }
+
                                     when (variant) {
                                         0 -> {
                                             solutions[WoolColor.PURPLE] = setOf(
@@ -235,13 +232,13 @@ object WaterBoardSolver {
     fun onRenderWorld(event: RenderWorldLastEvent) {
         if (!Skytils.config.waterBoardSolver || !DungeonListener.missingPuzzles.contains("Water Board")) return
         if (chestPos == null || roomFacing == null || variant == -1) return
-        val leverStates = LeverBlock.values().associateWithTo(EnumMap(LeverBlock::class.java)) {
+        val leverStates = LeverBlock.entries.associateWithTo(EnumMap(LeverBlock::class.java)) {
             getLeverToggleState(it.leverPos)
         }
         val renderTimes = HashMap<LeverBlock, Int>()
         var matching = 0
         val matrixStack = UMatrixStack()
-        for (color in WoolColor.values()) {
+        for (color in WoolColor.entries) {
             val renderColor = Color(color.dyeColor.mapColor.colorValue).brighter()
             if (color.isExtended) {
                 val solution = solutions[color] ?: continue
@@ -304,7 +301,7 @@ object WaterBoardSolver {
                 chestPos!!.offset(
                     roomFacing!!.opposite, 3 + ordinal
                 )
-            ).block === Blocks.wool
+            ).block == Blocks.wool
     }
 
     enum class LeverBlock(var block: Block) {
